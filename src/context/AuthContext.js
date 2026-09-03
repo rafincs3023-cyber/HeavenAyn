@@ -68,7 +68,7 @@ export function AuthProvider({ children }) {
       }
 
       if (firebaseUser) {
-        await setOnlineStatus(firebaseUser.uid, true);
+        setOnlineStatus(firebaseUser.uid, true).catch(() => {});
         profileUnsubRef.current = subscribeToUserProfile(firebaseUser.uid, setProfile);
       } else {
         setProfile(null);
@@ -123,7 +123,8 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      if (user) await setOnlineStatus(user.uid, false);
+      // Best-effort: a failed presence write must never keep the user signed in.
+      if (user) await setOnlineStatus(user.uid, false).catch(() => {});
       await signOut(auth);
       return { success: true };
     } catch (error) {

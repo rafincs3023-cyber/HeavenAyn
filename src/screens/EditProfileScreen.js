@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +15,7 @@ import { useAppTheme } from '../context/ThemeContext';
 import Avatar from '../components/Avatar';
 import { updateUserProfile } from '../services/userService';
 import { uploadProfileImage } from '../services/storageService';
+import { showAlert } from '../utils/alert';
 
 export default function EditProfileScreen({ navigation }) {
   const { user, profile } = useAuth();
@@ -42,7 +42,7 @@ export default function EditProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (!username.trim()) {
-      Alert.alert('Username required', 'Please enter a username.');
+      showAlert('Username required', 'Please enter a username.');
       return;
     }
     setSaving(true);
@@ -58,7 +58,7 @@ export default function EditProfileScreen({ navigation }) {
       });
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Error', 'Could not update profile. Please try again.');
+      showAlert('Error', 'Could not update profile. Please try again.');
     } finally {
       setSaving(false);
     }

@@ -16,7 +16,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.heavenayn"
+      "bundleIdentifier": "com.yourcompany.heavenayn",
+      "infoPlist": {
+        "NSCameraUsageDescription": "The app uses your camera for video calls and to share photos in chat.",
+        "NSMicrophoneUsageDescription": "The app uses your microphone for voice and video calls."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,9 +29,14 @@
       },
       "package": "com.yourcompany.heavenayn",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -43,6 +52,11 @@
       ],
       "expo-asset",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ef1eea9d-9d66-442d-960f-f68144582d0c"
+      }
+    }
   }
 }

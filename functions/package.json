@@ -1,0 +1,19 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for HeavenAyn (Agora RTC token minting)",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "agora-token": "^2.0.5",
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.0"
+  }
+}

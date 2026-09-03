@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import Avatar from '../components/Avatar';
+import { showAlert } from '../utils/alert';
 
 export default function ProfileScreen({ navigation }) {
   const { user, profile, logout, getSavedAccounts, removeSavedAccount, switchAccount } = useAuth();
@@ -18,14 +19,14 @@ export default function ProfileScreen({ navigation }) {
   );
 
   function handleLogout() {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+    showAlert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log Out', style: 'destructive', onPress: () => logout() },
     ]);
   }
 
   function handleSwitchTo(account) {
-    Alert.alert(
+    showAlert(
       'Switch Account',
       `Log out and sign in as ${account.username || account.email}?`,
       [
@@ -86,8 +87,8 @@ export default function ProfileScreen({ navigation }) {
           <Text style={[styles.label, { color: theme.subText, marginLeft: 4, marginTop: 6 }]}>
             Switch Account
           </Text>
-          {otherAccounts.map((account) => (
-            <View key={account.uid} style={styles.accountRow}>
+          {otherAccounts.map((account, index) => (
+            <View key={account.uid || account.email || `account-${index}`} style={styles.accountRow}>
               <TouchableOpacity style={styles.row} onPress={() => handleSwitchTo(account)}>
                 <Ionicons name="person-outline" size={20} color={theme.primary} />
                 <View style={{ marginLeft: 10, flex: 1 }}>
