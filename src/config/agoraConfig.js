@@ -8,7 +8,7 @@
 //                               `getAgoraToken` Cloud Function (see functions/)
 // ---------------------------------------------------------------------------
 
-export const AGORA_APP_ID = 'PASTE_YOUR_AGORA_APP_ID_HERE';
+export const AGORA_APP_ID = '2fc3c52470714429a3fe6200e8ef966c';
 
 // When true, CallScreen asks the `getAgoraToken` Cloud Function for a fresh
 // RTC token before joining. When false, it joins with an empty token (only
