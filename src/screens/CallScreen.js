@@ -12,7 +12,14 @@ import {
   isTerminalStatus,
 } from '../services/callService';
 import { getAgora, requestCallPermissions, isCallingSupported } from '../services/agoraService';
-import { AGORA_APP_ID, CALL_RING_TIMEOUT_MS, hashUid } from '../config/agoraConfig';
+import {
+  AGORA_APP_ID,
+  AGORA_TEMP_TEST,
+  AGORA_TEST_CHANNEL,
+  AGORA_TEMP_TOKEN,
+  CALL_RING_TIMEOUT_MS,
+  hashUid,
+} from '../config/agoraConfig';
 
 function formatDuration(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -50,7 +57,6 @@ export default function CallScreen({ route, navigation }) {
       ? { name: call?.calleeName, photo: call?.calleePhoto }
       : { name: call?.callerName, photo: call?.callerPhoto };
 
-  // ---- teardown ----------------------------------------------------------
   const cleanupEngine = useCallback(() => {
     const engine = engineRef.current;
     if (!engine) return;
@@ -71,8 +77,6 @@ export default function CallScreen({ route, navigation }) {
     if (navigation.canGoBack()) navigation.goBack();
   }, [cleanupEngine, navigation]);
 
-  // End the call from this side. Picks "cancelled" if the caller bails before
-  // the callee ever answered, otherwise "ended".
   const hangUp = useCallback(
     async (nextStatus) => {
       if (endedRef.current) return;
@@ -87,14 +91,13 @@ export default function CallScreen({ route, navigation }) {
       try {
         await updateCallStatus(callId, status);
       } catch (e) {
-        // best effort — the other side also writes a terminal status
+        // best effort
       }
       if (navigation.canGoBack()) navigation.goBack();
     },
     [callId, role, cleanupEngine, navigation]
   );
 
-  // ---- live call document ----------------------------------------------------
   useEffect(() => {
     const unsub = subscribeToCall(callId, (doc) => {
       callRef.current = doc;
@@ -116,7 +119,6 @@ export default function CallScreen({ route, navigation }) {
     return unsub;
   }, [callId, leaveAndGoBack]);
 
-  // ---- ring timeout (caller only) --------------------------------------------
   useEffect(() => {
     if (role !== 'caller' || remoteJoined) return undefined;
     const t = setTimeout(() => {
@@ -125,14 +127,12 @@ export default function CallScreen({ route, navigation }) {
     return () => clearTimeout(t);
   }, [role, remoteJoined, hangUp]);
 
-  // ---- call duration timer -------------------------------------------------
   useEffect(() => {
     if (!remoteJoined) return undefined;
     const id = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [remoteJoined]);
 
-  // ---- Agora engine: init + join (runs once, when the call type is known) ---
   useEffect(() => {
     if (!callType || startedRef.current || !isCallingSupported || !agora) return undefined;
     startedRef.current = true;
@@ -177,10 +177,20 @@ export default function CallScreen({ route, navigation }) {
       engine.setEnableSpeakerphone(video);
       if (!cancelled) setSpeakerOn(video);
 
-      const agoraUid = hashUid(user.uid);
-      const channel = callRef.current?.channelName || callId;
-      const token = await fetchAgoraToken(channel, agoraUid);
+      const agoraUid = AGORA_TEMP_TEST ? 0 : hashUid(user.uid);
+      const channel = AGORA_TEMP_TEST
+        ? AGORA_TEST_CHANNEL
+        : callRef.current?.channelName || callId;
+      const token = AGORA_TEMP_TEST
+        ? AGORA_TEMP_TOKEN
+        : await fetchAgoraToken(channel, agoraUid);
+
       if (cancelled) return;
+      if (AGORA_TEMP_TEST && !token) {
+        console.warn('[agora] temporary test token is missing');
+        hangUp(CALL_STATUS.ENDED);
+        return;
+      }
 
       engine.joinChannel(token || '', channel, agoraUid, {
         channelProfile: ChannelProfileType.ChannelProfileCommunication,
@@ -197,10 +207,8 @@ export default function CallScreen({ route, navigation }) {
     };
   }, [callType, agora, user.uid, callId, hangUp]);
 
-  // ---- unmount safety ----------------------------------------------------
   useEffect(() => cleanupEngine, [cleanupEngine]);
 
-  // ---- controls ---------------------------------------------------------------
   const toggleMic = () => {
     const next = !micMuted;
     setMicMuted(next);
@@ -219,7 +227,6 @@ export default function CallScreen({ route, navigation }) {
   };
   const flipCamera = () => engineRef.current?.switchCamera();
 
-  // ---- render ---------------------------------------------------------------
   const statusText = endedRef.current
     ? 'Call ended'
     : remoteJoined
