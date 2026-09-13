@@ -1,25 +1,30 @@
 // agoraConfig.js
 // ---------------------------------------------------------------------------
-// 1. Go to https://console.agora.io -> create a project
-// 2. Copy the App ID and paste it below
-// 3. Auth mode:
-//      - "Testing / APP ID"  -> leave AGORA_USE_TOKEN = false (quick start, dev only)
-//      - "APP ID + Token"    -> set AGORA_USE_TOKEN = true and deploy the
-//                               `getAgoraToken` Cloud Function (see functions/)
+// Production:
+//   - Keep the Agora project in Secure / App ID + Token mode.
+//   - Set AGORA_USE_TOKEN = true and use a backend token service.
+//
+// Temporary console-token testing:
+//   - Set AGORA_TEMP_TEST = true.
+//   - Generate a temporary RTC token in Agora Console for AGORA_TEST_CHANNEL.
+//   - Put that token in EXPO_PUBLIC_AGORA_TEMP_TOKEN only on the local machine.
+//   - Never put the App Certificate in the app.
 // ---------------------------------------------------------------------------
 
 export const AGORA_APP_ID = '2fc3c52470714429a3fe6200e8ef966c';
 
-// When true, CallScreen asks the `getAgoraToken` Cloud Function for a fresh
-// RTC token before joining. When false, it joins with an empty token (only
-// works while the Agora project is in testing mode).
+// Secure production-token path (Firebase Cloud Function / other token server).
 export const AGORA_USE_TOKEN = false;
+
+// Temporary development test using Agora Console token.
+export const AGORA_TEMP_TEST = true;
+export const AGORA_TEST_CHANNEL = 'heavenayn-test';
+export const AGORA_TEMP_TOKEN = process.env.EXPO_PUBLIC_AGORA_TEMP_TOKEN || '';
 
 // Ringing timeout — caller gives up (call marked "missed") after this many ms.
 export const CALL_RING_TIMEOUT_MS = 35000;
 
-// Agora needs a numeric uid (uint32, non-zero). Firebase uids are strings, so
-// hash each one into a stable number. Same input always maps to the same uid.
+// Agora needs a numeric uid (uint32, non-zero) in normal production mode.
 export function hashUid(str = '') {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
