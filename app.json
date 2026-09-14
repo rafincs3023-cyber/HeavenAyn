@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#075E54"
       },
-      "package": "com.yourcompany.heavenayn",
+      "package": "com.heavenayn.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",

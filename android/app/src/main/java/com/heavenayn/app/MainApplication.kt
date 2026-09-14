@@ -1,4 +1,4 @@
-package com.yourcompany.heavenayn
+package com.heavenayn.app
 
 import android.app.Application
 import android.content.res.Configuration
