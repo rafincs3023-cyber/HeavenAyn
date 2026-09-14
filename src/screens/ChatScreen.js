@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { useCall } from '../context/CallContext';
 import Avatar from '../components/Avatar';
 import MessageBubble from '../components/MessageBubble';
 import {
@@ -36,6 +37,7 @@ export default function ChatScreen({ route, navigation }) {
   const { chatId, otherUser: initialOtherUser } = route.params;
   const { user } = useAuth();
   const { theme } = useAppTheme();
+  const { startCall } = useCall();
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -77,10 +79,24 @@ export default function ChatScreen({ route, navigation }) {
                 : formatLastSeen(otherUser?.lastSeen)}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={() => startCall(otherUser, 'audio')}
+            style={styles.headerCallBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="call-outline" size={22} color={theme.headerText} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => startCall(otherUser, 'video')}
+            style={styles.headerCallBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="videocam-outline" size={24} color={theme.headerText} />
+          </TouchableOpacity>
         </View>
       ),
     });
-  }, [otherUser, chatData, theme]);
+  }, [otherUser, chatData, theme, startCall]);
 
   // Real-time messages
   useEffect(() => {
@@ -198,7 +214,7 @@ export default function ChatScreen({ route, navigation }) {
         <FlatList
           ref={flatListRef}
           data={messages}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item.id || `message-${index}`}
           renderItem={({ item }) => <MessageBubble message={item} isMine={item.senderId === user.uid} />}
           contentContainerStyle={{ paddingVertical: 10 }}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -267,6 +283,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   backBtn: { marginRight: 8 },
+  headerCallBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   headerName: { fontSize: 16, fontWeight: '700' },
   headerStatus: { fontSize: 12, opacity: 0.85, marginTop: 1 },
   inputBar: {
