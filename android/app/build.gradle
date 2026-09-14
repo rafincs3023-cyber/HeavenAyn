@@ -1,6 +1,10 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// Reads android/app/google-services.json (Firebase Cloud Messaging).
+// No Firebase Analytics dependency is added, so this plugin only wires up
+// the FCM sender/app-id resources expo-notifications needs.
+apply plugin: "com.google.gms.google-services"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 

@@ -28,6 +28,7 @@
         "backgroundColor": "#075E54"
       },
       "package": "com.heavenayn.app",
+      "googleServicesFile": "./android/app/google-services.json",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
