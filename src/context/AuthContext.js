@@ -32,6 +32,11 @@ import {
   setOnlineStatus,
   subscribeToUserProfile,
 } from '../services/userService';
+import {
+  registerForPushNotificationsAsync,
+  addPushTokenRefreshListener,
+  removePushTokenForDevice,
+} from '../services/notificationService';
 
 const AuthContext = createContext();
 
@@ -57,6 +62,7 @@ export function AuthProvider({ children }) {
   const [initializing, setInitializing] = useState(true);
   const [pendingPrefillEmail, setPendingPrefillEmail] = useState(null);
   const profileUnsubRef = useRef(null);
+  const pushTokenSubRef = useRef(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -66,10 +72,17 @@ export function AuthProvider({ children }) {
         profileUnsubRef.current();
         profileUnsubRef.current = null;
       }
+      if (pushTokenSubRef.current) {
+        pushTokenSubRef.current.remove();
+        pushTokenSubRef.current = null;
+      }
 
       if (firebaseUser) {
         setOnlineStatus(firebaseUser.uid, true).catch(() => {});
         profileUnsubRef.current = subscribeToUserProfile(firebaseUser.uid, setProfile);
+        // Best-effort: push registration must never block or fail login.
+        registerForPushNotificationsAsync(firebaseUser.uid).catch(() => {});
+        pushTokenSubRef.current = addPushTokenRefreshListener(firebaseUser.uid);
       } else {
         setProfile(null);
       }
@@ -79,6 +92,7 @@ export function AuthProvider({ children }) {
     return () => {
       unsubscribe();
       if (profileUnsubRef.current) profileUnsubRef.current();
+      if (pushTokenSubRef.current) pushTokenSubRef.current.remove();
     };
   }, []);
 
@@ -123,8 +137,13 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      // Best-effort: a failed presence write must never keep the user signed in.
-      if (user) await setOnlineStatus(user.uid, false).catch(() => {});
+      // Best-effort: a failed presence/token write must never keep the user signed in.
+      if (user) {
+        await setOnlineStatus(user.uid, false).catch(() => {});
+        // Only this device's token is removed — other signed-in devices for
+        // the same account keep receiving notifications.
+        await removePushTokenForDevice(user.uid).catch(() => {});
+      }
       await signOut(auth);
       return { success: true };
     } catch (error) {

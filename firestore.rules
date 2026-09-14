@@ -18,6 +18,15 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && request.auth.uid == userId;
       allow delete: if false;
+
+      // --- PUSH TOKENS (subcollection) ---
+      // One doc per device (keyed by a locally-generated device id, not the
+      // token itself). Only the owning user can read/write their own
+      // devices; actually sending pushes happens server-side (Admin SDK),
+      // which bypasses these rules entirely.
+      match /pushTokens/{deviceId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     // --- CHATS ---
