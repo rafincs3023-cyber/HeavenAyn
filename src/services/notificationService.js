@@ -28,6 +28,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { navigate } from '../navigation/navigationRef';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
@@ -189,4 +190,41 @@ export async function removePushTokenForDevice(uid) {
   } catch (e) {
     console.warn('[notificationService] failed to remove push token:', e?.message || e);
   }
+}
+
+// Routes a tapped notification to the right screen, based on the `data`
+// payload the backend attaches (see functions/index.js).
+function handleNotificationResponse(response) {
+  const data = response?.notification?.request?.content?.data;
+  if (!data?.type) return;
+
+  if (data.type === 'message' && data.chatId && data.senderId) {
+    // A minimal `otherUser` placeholder is enough — ChatScreen subscribes to
+    // the live profile itself and fills in name/photo right away.
+    navigate('Chat', { chatId: data.chatId, otherUser: { id: data.senderId } });
+    return;
+  }
+
+  if (data.type === 'call') {
+    // No explicit navigation needed: CallProvider's incoming-call listener
+    // and IncomingCallModal are mounted above every screen and already pick
+    // up the still-ringing call as soon as the app opens.
+    return;
+  }
+}
+
+// Call once near app startup (see App.js). Handles both a tap that launched
+// the app from a killed state and a tap while the app is already running.
+// Returns a cleanup function.
+export function attachNotificationTapHandler() {
+  Notifications.getLastNotificationResponseAsync()
+    .then((response) => {
+      if (response) handleNotificationResponse(response);
+    })
+    .catch(() => {});
+
+  const subscription = Notifications.addNotificationResponseReceivedListener(
+    handleNotificationResponse
+  );
+  return () => subscription.remove();
 }
