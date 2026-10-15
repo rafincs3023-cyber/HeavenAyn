@@ -98,18 +98,16 @@ export function subscribeToIncomingCalls(uid, callback, maxAgeMs = 60000) {
   });
 }
 
-// Ask the backend for a short-lived Agora RTC token. Returns null when tokens
-// are disabled or the function isn't deployed — CallScreen then joins with an
-// empty token (fine while the Agora project is in testing mode).
+// Ask the backend for a short-lived Agora RTC token (valid ~1 hour; the
+// CallScreen renews it before it runs out). Returns null only when tokens are
+// switched off in agoraConfig. Any failure THROWS — the caller must end the
+// call instead of trying to join without a token.
 export async function fetchAgoraToken(channelName, agoraUid) {
   if (!AGORA_USE_TOKEN) return null;
-  try {
-    const functions = getFunctions(app);
-    const callable = httpsCallable(functions, 'getAgoraToken');
-    const res = await callable({ channelName, uid: agoraUid });
-    return res?.data?.token || null;
-  } catch (e) {
-    console.warn('[calls] token fetch failed, joining without a token:', e?.message);
-    return null;
-  }
+  const functions = getFunctions(app);
+  const callable = httpsCallable(functions, 'getAgoraToken');
+  const res = await callable({ channelName, uid: agoraUid });
+  const token = res?.data?.token;
+  if (!token) throw new Error('Token server returned no token.');
+  return token;
 }

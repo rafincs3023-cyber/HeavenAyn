@@ -22,9 +22,22 @@ const db = getFirestore();
 
 const TOKEN_TTL_SECONDS = 3600;
 
+// Calls in these states may still (re)join their Agora channel.
+const LIVE_CALL_STATUSES = ['ringing', 'accepted'];
+
+// MUST stay identical to hashUid() in src/config/agoraConfig.js — the app
+// joins Agora with this number, and the token is only valid for that uid.
+function hashUid(str = '') {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return ((h >>> 0) % 1_000_000_000) + 1;
+}
+
 exports.getAgoraToken = onCall(
   { secrets: ['AGORA_APP_ID', 'AGORA_APP_CERTIFICATE'] },
-  (request) => {
+  async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'You must be signed in to start a call.');
     }
@@ -41,6 +54,28 @@ exports.getAgoraToken = onCall(
     }
     if (typeof uid !== 'number' || !Number.isFinite(uid)) {
       throw new HttpsError('invalid-argument', 'A numeric uid is required.');
+    }
+
+    // The client may only ask for its OWN Agora uid — otherwise it could
+    // impersonate the other participant inside the channel.
+    if (uid !== hashUid(request.auth.uid)) {
+      throw new HttpsError('permission-denied', 'uid does not belong to this user.');
+    }
+
+    // The channel name is the call id. Only the caller or callee of a call
+    // that is still live may join its channel.
+    const callSnap = await db.collection('calls').doc(channelName).get();
+    if (!callSnap.exists) {
+      throw new HttpsError('not-found', 'Call not found.');
+    }
+    const call = callSnap.data();
+    const isParty =
+      request.auth.uid === call.callerId || request.auth.uid === call.calleeId;
+    if (!isParty) {
+      throw new HttpsError('permission-denied', 'You are not part of this call.');
+    }
+    if (!LIVE_CALL_STATUSES.includes(call.status)) {
+      throw new HttpsError('failed-precondition', 'This call has already ended.');
     }
 
     // agora-token v2 takes expirations as durations in seconds from now.

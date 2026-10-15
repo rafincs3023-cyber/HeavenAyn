@@ -12,8 +12,10 @@ import {
   isTerminalStatus,
 } from '../services/callService';
 import { getAgora, requestCallPermissions, isCallingSupported } from '../services/agoraService';
+import { showAlert } from '../utils/alert';
 import {
   AGORA_APP_ID,
+  AGORA_USE_TOKEN,
   AGORA_TEMP_TEST,
   AGORA_TEST_CHANNEL,
   AGORA_TEMP_TOKEN,
@@ -50,6 +52,7 @@ export default function CallScreen({ route, navigation }) {
   const handlerRef = useRef(null);
   const startedRef = useRef(false);
   const endedRef = useRef(false);
+  const tokenTargetRef = useRef(null); // { channel, agoraUid } for token renewal
 
   const isVideo = callType === 'video';
   const other =
@@ -97,6 +100,34 @@ export default function CallScreen({ route, navigation }) {
     },
     [callId, role, cleanupEngine, navigation]
   );
+
+  // End the call and tell the user why (used when no valid token is available).
+  const failCall = useCallback(
+    (message) => {
+      hangUp(CALL_STATUS.ENDED);
+      showAlert('Call failed', message);
+    },
+    [hangUp]
+  );
+
+  // Swap in a fresh token without leaving the channel. Only possible when the
+  // token comes from our server; a console test token cannot be renewed.
+  const renewToken = useCallback(async () => {
+    const engine = engineRef.current;
+    const target = tokenTargetRef.current;
+    if (!engine || !target || endedRef.current) return;
+    if (AGORA_TEMP_TEST || !AGORA_USE_TOKEN) {
+      failCall('The test token expired. Calls need the token server.');
+      return;
+    }
+    try {
+      const fresh = await fetchAgoraToken(target.channel, target.agoraUid);
+      if (!endedRef.current && engineRef.current) engineRef.current.renewToken(fresh);
+    } catch (e) {
+      console.warn('[agora] token renewal failed:', e?.message);
+      failCall('The call was disconnected. Please call again.');
+    }
+  }, [failCall]);
 
   useEffect(() => {
     const unsub = subscribeToCall(callId, (doc) => {
@@ -163,6 +194,15 @@ export default function CallScreen({ route, navigation }) {
         onUserOffline: () => {
           if (!cancelled) hangUp(CALL_STATUS.ENDED);
         },
+        // Agora warns ~30 s before the token expires: fetch a fresh one so
+        // long calls are not cut off at the 1-hour mark.
+        onTokenPrivilegeWillExpire: () => {
+          if (!cancelled) renewToken();
+        },
+        // The token already expired (e.g. renewal failed while offline).
+        onRequestToken: () => {
+          if (!cancelled) renewToken();
+        },
         onError: (err, msg) => console.warn('[agora] error', err, msg),
       };
       handlerRef.current = handler;
@@ -181,14 +221,23 @@ export default function CallScreen({ route, navigation }) {
       const channel = AGORA_TEMP_TEST
         ? AGORA_TEST_CHANNEL
         : callRef.current?.channelName || callId;
-      const token = AGORA_TEMP_TEST
-        ? AGORA_TEMP_TOKEN
-        : await fetchAgoraToken(channel, agoraUid);
+      tokenTargetRef.current = { channel, agoraUid };
+
+      let token = null;
+      try {
+        token = AGORA_TEMP_TEST
+          ? AGORA_TEMP_TOKEN
+          : await fetchAgoraToken(channel, agoraUid);
+      } catch (e) {
+        console.warn('[agora] token fetch failed:', e?.message);
+        if (!cancelled) failCall('Could not connect the call. Please try again.');
+        return;
+      }
 
       if (cancelled) return;
-      if (AGORA_TEMP_TEST && !token) {
-        console.warn('[agora] temporary test token is missing');
-        hangUp(CALL_STATUS.ENDED);
+      if ((AGORA_TEMP_TEST || AGORA_USE_TOKEN) && !token) {
+        console.warn('[agora] no token available — not joining the channel');
+        failCall('Could not connect the call. Please try again.');
         return;
       }
 
@@ -205,7 +254,7 @@ export default function CallScreen({ route, navigation }) {
     return () => {
       cancelled = true;
     };
-  }, [callType, agora, user.uid, callId, hangUp]);
+  }, [callType, agora, user.uid, callId, hangUp, failCall, renewToken]);
 
   useEffect(() => cleanupEngine, [cleanupEngine]);
 

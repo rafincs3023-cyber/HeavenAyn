@@ -14,10 +14,10 @@
 export const AGORA_APP_ID = '2fc3c52470714429a3fe6200e8ef966c';
 
 // Secure production-token path (Firebase Cloud Function / other token server).
-export const AGORA_USE_TOKEN = false;
+export const AGORA_USE_TOKEN = true;
 
 // Temporary development test using Agora Console token.
-export const AGORA_TEMP_TEST = true;
+export const AGORA_TEMP_TEST = false;
 export const AGORA_TEST_CHANNEL = 'heavenayn-test';
 export const AGORA_TEMP_TOKEN = process.env.EXPO_PUBLIC_AGORA_TEMP_TOKEN || '';
 
