@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.secret.local)",
+      "Read(**/.runtimeconfig.json)",
+      "Read(*.jks)",
+      "Read(*.p8)",
+      "Read(*.p12)",
+      "Read(*.key)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(firebase functions:secrets:access AGORA_APP_CERTIFICATE*)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(firebase deploy *)"
+    ]
+  }
+}
