@@ -72,7 +72,7 @@ export default function UsersScreen({ navigation }) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item.id || item.email || `user-${index}`}
           renderItem={({ item }) => (
             <UserListItem
               user={item}

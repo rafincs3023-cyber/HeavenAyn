@@ -60,7 +60,7 @@ export default function HomeScreen({ navigation }) {
       ) : (
         <FlatList
           data={chats}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item.id || `chat-${index}`}
           renderItem={({ item }) => {
             const otherUid = item.users.find((id) => id !== user.uid);
             const otherUser = usersById[otherUid];

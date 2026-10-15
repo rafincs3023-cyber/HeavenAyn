@@ -5,6 +5,7 @@ import UsersScreen from '../screens/UsersScreen';
 import ChatScreen from '../screens/ChatScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import CallScreen from '../screens/CallScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,11 @@ export default function MainNavigator() {
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: true }} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen
+        name="Call"
+        component={CallScreen}
+        options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
+      />
     </Stack.Navigator>
   );
 }

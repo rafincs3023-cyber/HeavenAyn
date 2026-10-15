@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { navigationRef } from './navigationRef';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import SplashScreen from '../screens/SplashScreen';
@@ -27,7 +28,7 @@ export default function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       {user ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

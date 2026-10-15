@@ -18,6 +18,15 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && request.auth.uid == userId;
       allow delete: if false;
+
+      // --- PUSH TOKENS (subcollection) ---
+      // One doc per device (keyed by a locally-generated device id, not the
+      // token itself). Only the owning user can read/write their own
+      // devices; actually sending pushes happens server-side (Admin SDK),
+      // which bypasses these rules entirely.
+      match /pushTokens/{deviceId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     // --- CHATS ---
@@ -44,6 +53,25 @@ service cloud.firestore {
 
         allow delete: if false;
       }
+    }
+
+    // --- CALLS ---
+    // A call document is the signaling channel for one audio/video call. Only
+    // the caller and callee can see or change it.
+    match /calls/{callId} {
+      function callParty() {
+        return isSignedIn() &&
+          (request.auth.uid == resource.data.callerId ||
+           request.auth.uid == resource.data.calleeId);
+      }
+
+      allow read: if callParty();
+      allow create: if isSignedIn()
+                    && request.auth.uid == request.resource.data.callerId
+                    && request.resource.data.callerId != request.resource.data.calleeId
+                    && request.resource.data.status == 'ringing';
+      allow update: if callParty();
+      allow delete: if false;
     }
   }
 }

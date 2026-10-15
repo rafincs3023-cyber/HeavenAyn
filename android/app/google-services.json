@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "787466489841",
+    "project_id": "chat-app-e7898",
+    "storage_bucket": "chat-app-e7898.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:787466489841:android:f663a1bc2a0aff29fa3e50",
+        "android_client_info": {
+          "package_name": "com.heavenayn.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3Zh7b1sTUodmVTrK3O8jmkiS4bv7leoE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

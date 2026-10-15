@@ -10,3 +10,13 @@ npm-debug.*
 *.orig.*
 web-build/
 .env
+
+# Secrets (never commit)
+.env.*
+.secret.local
+.runtimeconfig.json
+
+# Claude Code: keep shared settings, ignore personal/plugin state
+.claude/settings.local.json
+.claude/.skipper-session
+.skipper/
